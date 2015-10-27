@@ -8,13 +8,25 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpression;
+import javax.xml.xpath.XPathFactory;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -48,6 +60,52 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    public String parseRss(String input)  {
+        DocumentBuilderFactory factory;
+        DocumentBuilder builder;
+        Document doc;
+        XPathFactory xpf;
+        XPath xp;
+        XPathExpression xpe;
+        NodeList items;
+        int n;
+        String str;
+        StringBuilder sb = new StringBuilder();
+        try {
+            factory = DocumentBuilderFactory.newInstance();
+            builder = factory.newDocumentBuilder();
+//            //permitir trabajar sin conexión, evitar la resolución de la dtd por la red
+//            //<!DOCTYPE rss SYSTEM "http://www.validome.org/check/RSS_validator/errorFiles/DTDs/entity.dtd">
+//            builder.setEntityResolver(new EntityResolver() {
+//                @Override
+//                public InputSource resolveEntity(String publicId, String systemId) throws SAXException, IOException {
+//                    return new InputSource(new StringReader(""));
+//                }
+//            });
+            doc = builder.parse(new ByteArrayInputStream(input.getBytes()));
+            doc.getDocumentElement().normalize();
+
+            xpf = XPathFactory.newInstance();
+            xp = xpf.newXPath();
+
+            xpe = xp.compile("/rss/channel/item");
+            items = (NodeList) xpe.evaluate(doc.getDocumentElement(), XPathConstants.NODESET);
+            n = items.getLength();
+            for (int i = 0; i < n; i++) {
+                Element item = (Element) items.item(i);
+                str = xp.evaluate("title", item);
+                sb.append(str);
+                sb.append("\n");
+                str = xp.evaluate("pubDate", item);
+                sb.append(str);
+                sb.append("\n\n");
+            }
+            return sb.toString();
+        }catch(Exception e){
+            return "Error in parseRss: " + e;
+        }
+    }
+
     //http://developer.android.com/reference/android/os/AsyncTask.html
     private class HttpGetTask extends AsyncTask<Void, Void, String>{
 
@@ -64,8 +122,8 @@ public class MainActivity extends AppCompatActivity {
                 Log.d("Cliente HTTP", "respuesta " + conn.getResponseCode());
                 InputStream inputStream = new BufferedInputStream(conn.getInputStream());
                 BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-                StringBuffer sb = new StringBuffer("");
-                String line = "";
+                StringBuilder sb = new StringBuilder("");
+                String line;
                 while ((line = bufferedReader.readLine()) != null) {
                     sb.append(line);
                 }
@@ -78,7 +136,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(String result){
-            txtOutput.setText(result);
+            txtOutput.setText(parseRss(result));
         }
     }
 }
