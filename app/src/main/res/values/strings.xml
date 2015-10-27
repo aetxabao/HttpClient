@@ -2,7 +2,7 @@
     <string name="app_name">HttpClient</string>
     <string name="action_settings">Settings</string>
     <string name="lblIntro">Dirección de la web</string>
-    <string name="txtHttp">http://elbinario.net/feed/</string>
+    <string name="txtHttp">http://www.sindominio.net/</string>
     <string name="btnSend">Consultar</string>
     <string name="txtWaiting">Esperando...</string>
     <string name="txtErrorUrl">Error en la URL</string>
