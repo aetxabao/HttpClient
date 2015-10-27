@@ -7,6 +7,10 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -22,6 +26,10 @@ public class MainActivity extends AppCompatActivity {
     protected EditText txtUrl;
     protected EditText txtOutput;
 
+    protected TextView weather;
+    //http://home.openweathermap.org/users/sign_up
+    protected String strUrl = "http://api.openweathermap.org/data/2.5/weather?mode=json&lang=sp&units=metric&q=Pamplona&appid=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
+
     protected URL url;
 
     @Override
@@ -32,6 +40,10 @@ public class MainActivity extends AppCompatActivity {
         btnSend = (Button) findViewById(R.id.BtnSend);
         txtUrl = (EditText) findViewById(R.id.TxtUrl);
         txtOutput = (EditText) findViewById(R.id.TxtHtml);
+
+        weather = (TextView) findViewById(R.id.LblWeather);
+
+        txtUrl.setText(strUrl);
 
         btnSend.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -46,6 +58,19 @@ public class MainActivity extends AppCompatActivity {
                 new HttpGetTask().execute();
             }
         });
+    }
+
+    public String parseJson(String in){
+        try{
+            JSONObject reader = new JSONObject(in);
+            String nombre = reader.getString("name");
+            JSONArray tiempo = reader.getJSONArray("weather");
+            JSONObject obj0 = tiempo.getJSONObject(0);
+            String desc = obj0.getString("description");
+            return nombre + " - " + desc;
+        }catch(Exception e){
+            return "Error parser: " + e;
+        }
     }
 
     //http://developer.android.com/reference/android/os/AsyncTask.html
@@ -64,8 +89,8 @@ public class MainActivity extends AppCompatActivity {
                 Log.d("Cliente HTTP", "respuesta " + conn.getResponseCode());
                 InputStream inputStream = new BufferedInputStream(conn.getInputStream());
                 BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-                StringBuffer sb = new StringBuffer("");
-                String line = "";
+                StringBuilder sb = new StringBuilder("");
+                String line;
                 while ((line = bufferedReader.readLine()) != null) {
                     sb.append(line);
                 }
@@ -78,6 +103,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(String result){
+            weather.setText(parseJson(result));
             txtOutput.setText(result);
         }
     }
